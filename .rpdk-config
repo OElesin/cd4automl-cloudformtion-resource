@@ -1,0 +1,10 @@
+{
+    "typeName": "CD4AutoML::Workflow::Deploy",
+    "language": "python37",
+    "runtime": "python3.7",
+    "entrypoint": "cd4automl_workflow_deploy.handlers.resource",
+    "testEntrypoint": "cd4automl_workflow_deploy.handlers.test_entrypoint",
+    "settings": {
+        "use_docker": true
+    }
+}

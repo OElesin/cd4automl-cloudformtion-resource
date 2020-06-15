@@ -1,0 +1,63 @@
+{
+    "typeName": "CD4AutoML::Workflow::Deploy",
+    "description": "Cd4AutoML managed end-to-end workflow with model serving REST API",
+    "properties": {
+        "S3TrainingDataPath": {
+            "description": "S3 Path containing training data. Data format must CSV with headers.",
+            "type": "string"
+        },
+        "TargetColumnName": {
+            "description": "The name of the target column to be predicted. This MUST be last column in the CSV data in S3",
+            "type": "string",
+            "minLength": 5,
+            "maxLength": 10
+        },
+        "NotificationEmail": {
+            "description": "Valid email address to receive email notifications.",
+            "type": "string",
+            "pattern": "^[\\x20-\\x45]?[\\w-\\+]+(\\.[\\w]+)*@[\\w-]+(\\.[\\w]+)*(\\.[a-z]{2,})$"
+        },
+        "WorkflowName": {
+            "description": "Unique Name or Identifier for CD4AutoML workflow",
+            "type": "string"
+        },
+        "Schedule": {
+            "description": "Number of days before retraining AutoML model.",
+            "type": "string"
+        },
+        "InferenceApi": {
+            "description": "REST API URI for real time model inference available once workflow is completed",
+            "type": "string"
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "S3TrainingDataPath",
+        "TargetColumnName",
+        "NotificationEmail",
+        "WorkflowName"
+    ],
+    "readOnlyProperties": [
+        "/properties/InferenceApi"
+    ],
+    "primaryIdentifier": [
+        "/properties/WorkflowName"
+    ],
+    "handlers": {
+        "create": {
+            "permissions": [""]
+        },
+        "read": {
+            "permissions": [""]
+        },
+        "update": {
+            "permissions": [""]
+        },
+        "delete": {
+            "permissions": [""]
+        },
+        "list": {
+            "permissions": [""]
+        }
+    }
+}
