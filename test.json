@@ -11,7 +11,7 @@
       "S3TrainingDataPath": "s3://test-bucket/data.csv",
       "TargetColumnName": "Churn",
       "NotificationEmail": "elesin.olalekan@gmail.com",
-      "WorkflowName": "test-workflow"
+      "WorkflowName": "test-workflow-new"
     },
     "previousResourceState": null,
     "logicalResourceIdentifier": null

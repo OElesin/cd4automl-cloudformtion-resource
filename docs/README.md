@@ -53,10 +53,6 @@ _Required_: Yes
 
 _Type_: String
 
-_Minimum_: <code>5</code>
-
-_Maximum_: <code>10</code>
-
 _Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-no-interrupt)
 
 #### NotificationEmail
@@ -67,8 +63,6 @@ _Required_: Yes
 
 _Type_: String
 
-_Pattern_: <code>^[\x20-\x45]?[\w-\+]+(\.[\w]+)*@[\w-]+(\.[\w]+)*(\.[a-z]{2,})$</code>
-
 _Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-no-interrupt)
 
 #### WorkflowName
@@ -78,6 +72,8 @@ Unique Name or Identifier for CD4AutoML workflow
 _Required_: Yes
 
 _Type_: String
+
+_Maximum_: <code>10</code>
 
 _Update requires_: [No interruption](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/using-cfn-updating-stacks-update-behaviors.html#update-no-interrupt)
 

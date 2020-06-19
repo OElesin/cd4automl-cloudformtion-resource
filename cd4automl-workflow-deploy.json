@@ -8,18 +8,19 @@
         },
         "TargetColumnName": {
             "description": "The name of the target column to be predicted. This MUST be last column in the CSV data in S3",
-            "type": "string",
-            "minLength": 5,
-            "maxLength": 10
+            "type": "string"
         },
         "NotificationEmail": {
             "description": "Valid email address to receive email notifications.",
             "type": "string",
-            "pattern": "^[\\x20-\\x45]?[\\w-\\+]+(\\.[\\w]+)*@[\\w-]+(\\.[\\w]+)*(\\.[a-z]{2,})$"
+            "examples": [
+                "test@example.com"
+            ]
         },
         "WorkflowName": {
             "description": "Unique Name or Identifier for CD4AutoML workflow",
-            "type": "string"
+            "type": "string",
+            "maxLength": 10
         },
         "Schedule": {
             "description": "Number of days before retraining AutoML model.",

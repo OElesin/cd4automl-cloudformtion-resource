@@ -39,6 +39,7 @@ def create_handler(
     progress: ProgressEvent = ProgressEvent(
         status=OperationStatus.IN_PROGRESS,
         resourceModel=model,
+        callbackContext=callback_context if callback_context is not None else {}
     )
     try:
         req_payload = {
@@ -49,28 +50,29 @@ def create_handler(
         }
         # auth = HTTPBasicAuth('API_KEY', '')
         LOG.info(f"Creating workflow ${model.WorkflowName}")
+        # resuming from a long CREATE operation
+        if 'DEPLOY_ID' in callback_context:
+            req_payload['DeployId'] = callback_context['DEPLOY_ID']
         req = http.request(
             'POST', url=CD4AUTO_ML_API, headers=HTTP_REQUEST_HEADER, body=json.dumps(req_payload)
         )
+
         payload = json.loads(req.data)
         deploy_status = payload['DeployStatus']
-        while deploy_status == 'IN_PROGRESS':
-            progress.status = OperationStatus.IN_PROGRESS
-            req_payload['DeployId'] = payload['DeployId']
-            req = http.request(
-                'POST', url=CD4AUTO_ML_API, headers=HTTP_REQUEST_HEADER, body=json.dumps(req_payload)
-            )
-            payload = json.loads(req.data)
-            deploy_status = payload['DeployStatus']
-            sleep(30)
+        progress.callbackContext['DEPLOY_ID'] = payload['DeployId']
+        progress.callbackDelaySeconds = 20
+        progress.status = OperationStatus.IN_PROGRESS
         if deploy_status in ('FAILED', 'FAULT', 'STOPPED', 'TIMED_OUT'):
             LOG.error(f"Workflow ${model.WorkflowName} creation failed with status ${deploy_status}")
-            raise exceptions.GeneralServiceException(f"creation failed with status ${deploy_status}")
-        else:
-            # Setting Status to success will signal to cfn that the operation is complete
+            progress.status = OperationStatus.FAILED
+        elif deploy_status == 'IN_PROGRESS':
             model.InferenceApi = payload.get('ApiUri', 'MyTestUrl')
             LOG.info(f"Created workflow ${model.WorkflowName} successfully")
+            progress.status = OperationStatus.IN_PROGRESS
+        else:
             progress.status = OperationStatus.SUCCESS
+        return progress
+
     except TypeError as e:
         # exceptions module lets CloudFormation know the type of failure that occurred
         LOG.error(f"Workflow creation failed with status ${e}")
@@ -97,38 +99,40 @@ def update_handler(
             'TargetColumnName': model.TargetColumnName,
             'NotificationEmail': model.NotificationEmail,
             'WorkflowName': model.WorkflowName,
+            'Schedule': model.Schedule
         }
         # auth = HTTPBasicAuth('API_KEY', '')
-        LOG.info(f"Updating workflow ${model.WorkflowName}")
+        LOG.info(f"Creating workflow ${model.WorkflowName}")
+        # resuming from a long CREATE operation
+        if 'DEPLOY_ID' in callback_context:
+            req_payload['DeployId'] = callback_context['DEPLOY_ID']
         req = http.request(
-            'POST', url=CD4AUTO_ML_API, headers=HTTP_REQUEST_HEADER, body=json.dumps(req_payload)
+            'PUT', url=CD4AUTO_ML_API, headers=HTTP_REQUEST_HEADER, body=json.dumps(req_payload)
         )
+
         payload = json.loads(req.data)
         deploy_status = payload['DeployStatus']
-        while deploy_status == 'IN_PROGRESS':
-            progress.status = OperationStatus.IN_PROGRESS
-            req_payload['DeployId'] = payload['DeployId']
-            req = http.request(
-                'POST', url=CD4AUTO_ML_API, headers=HTTP_REQUEST_HEADER, body=json.dumps(req_payload)
-            )
-            payload = json.loads(req.data)
-            deploy_status = payload['DeployStatus']
-            sleep(30)
+        progress.callbackContext['DEPLOY_ID'] = payload['DeployId']
+        progress.callbackDelaySeconds = 20
+        progress.status = OperationStatus.IN_PROGRESS
         if deploy_status in ('FAILED', 'FAULT', 'STOPPED', 'TIMED_OUT'):
-            LOG.error(f"Workflow ${model.WorkflowName} update failed with status ${deploy_status}")
-            raise exceptions.GeneralServiceException(f"update failed with status ${deploy_status}")
+            LOG.error(f"Workflow ${model.WorkflowName} creation failed with status ${deploy_status}")
+            progress.status = OperationStatus.FAILED
+        elif deploy_status == 'IN_PROGRESS':
+            LOG.info(f"Created workflow ${model.WorkflowName} successfully")
+            progress.status = OperationStatus.IN_PROGRESS
         else:
-            # Setting Status to success will signal to cfn that the operation is complete
-            model.InferenceApi = payload.get('ApiUri')
-            LOG.info(f"Updated workflow ${model.WorkflowName} successfully")
+            model.InferenceApi = payload.get('ApiUri', 'MyTestUrl')
             progress.status = OperationStatus.SUCCESS
+        return progress
+
     except TypeError as e:
         # exceptions module lets CloudFormation know the type of failure that occurred
-        # raise exceptions.InternalFailure(f"was not expecting type {e}")
-        # this can also be done by returning a failed progress event
         LOG.error(f"Workflow creation failed with status ${e}")
-        return ProgressEvent.failed(HandlerErrorCode.InternalFailure, f"was not expecting type {e}")
-    return ProgressEvent(status=OperationStatus.SUCCESS, resourceModel=model, message="Workflow updated")
+        raise exceptions.InternalFailure(f"was not expecting type {e}")
+        # this can also be done by returning a failed progress event
+        # return ProgressEvent.failed(HandlerErrorCode.InvalidRequest, f"was not expecting type {e}")
+    return ProgressEvent(status=OperationStatus.SUCCESS, resourceModel=model, message="Workflow created")
 
 
 @resource.handler(Action.DELETE)
@@ -151,6 +155,7 @@ def delete_handler(
     http.request(
         'DELETE', url=CD4AUTO_ML_API, headers=HTTP_REQUEST_HEADER, body=json.dumps(req_payload)
     )
+    progress.status = OperationStatus.SUCCESS
     return progress
 
 
