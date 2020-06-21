@@ -93,46 +93,7 @@ def update_handler(
         status=OperationStatus.IN_PROGRESS,
         resourceModel=model,
     )
-    try:
-        req_payload = {
-            'S3TrainingDataPath': model.S3TrainingDataPath,
-            'TargetColumnName': model.TargetColumnName,
-            'NotificationEmail': model.NotificationEmail,
-            'WorkflowName': model.WorkflowName,
-            'Schedule': model.Schedule
-        }
-        # auth = HTTPBasicAuth('API_KEY', '')
-        LOG.info(f"Creating workflow ${model.WorkflowName}")
-        # resuming from a long CREATE operation
-        if 'DEPLOY_ID' in callback_context:
-            req_payload['DeployId'] = callback_context['DEPLOY_ID']
-        req = http.request(
-            'PUT', url=CD4AUTO_ML_API, headers=HTTP_REQUEST_HEADER, body=json.dumps(req_payload)
-        )
-
-        payload = json.loads(req.data)
-        deploy_status = payload['DeployStatus']
-        progress.callbackContext['DEPLOY_ID'] = payload['DeployId']
-        progress.callbackDelaySeconds = 20
-        progress.status = OperationStatus.IN_PROGRESS
-        if deploy_status in ('FAILED', 'FAULT', 'STOPPED', 'TIMED_OUT'):
-            LOG.error(f"Workflow ${model.WorkflowName} creation failed with status ${deploy_status}")
-            progress.status = OperationStatus.FAILED
-        elif deploy_status == 'IN_PROGRESS':
-            LOG.info(f"Created workflow ${model.WorkflowName} successfully")
-            progress.status = OperationStatus.IN_PROGRESS
-        else:
-            model.InferenceApi = payload.get('ApiUri', 'MyTestUrl')
-            progress.status = OperationStatus.SUCCESS
-        return progress
-
-    except TypeError as e:
-        # exceptions module lets CloudFormation know the type of failure that occurred
-        LOG.error(f"Workflow creation failed with status ${e}")
-        raise exceptions.InternalFailure(f"was not expecting type {e}")
-        # this can also be done by returning a failed progress event
-        # return ProgressEvent.failed(HandlerErrorCode.InvalidRequest, f"was not expecting type {e}")
-    return ProgressEvent(status=OperationStatus.SUCCESS, resourceModel=model, message="Workflow created")
+    return create_handler(session, request, callback_context)
 
 
 @resource.handler(Action.DELETE)
